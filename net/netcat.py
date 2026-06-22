@@ -1,13 +1,18 @@
 #netcat utility implementation
 
-
 import sys
 import socket
 import getopt
 import threading
 import subprocess
 import argparse
+import ssl
 
+
+#server mode 
+SERVER_MODE_LISTEN_MAX = 5
+
+#args vars
 LISTEN=False
 COMMAND=False
 UPLOAD=False
@@ -58,8 +63,7 @@ def arguments_parser():
                         "--target",
                         default='0.0.0.0',
                         type=str,
-                        required=True,
-                        help="-t --target=IP_cible   - target listen port" 
+                        help="-t --target=IP_cible   - target listen port by default on 0.0.0.0" 
     )
 
     parser.add_argument("-p",
@@ -74,6 +78,45 @@ def arguments_parser():
 def usage():
     #help print
     pass
+
+
+
+
+def client_mode(buffer):
+    
+    client_sock  = socket.socket (socket.AF_INET,socket.SOCK_STREAM)
+
+    try:
+        #connection to the target host
+        client_sock.connect((TARGET,PORT))
+
+        #TODO : implement with ssl encryption 
+        #use fernet to secure backdoor
+
+        if len(buffer):
+            client_sock.sendall(buffer)
+
+        while True:
+            recv_len = 1
+            response = ""
+
+            while recv_len:
+                data=client_sock.recv(4096)
+                recv_len=len(data)
+                response+=data
+
+                if recv_len <4096:
+                    break
+
+            print(f"[*] server response : < {response.decode('utf-8',errors='ignore')} >")
+
+            buffer = input("")
+            buffer += "\n"
+            client_sock.sendall(buffer.encode(''))
+    except:
+        print("[*] Exception! Exciting.")
+
+        client_sock.close()
 
 def main ():
 
@@ -102,6 +145,16 @@ def main ():
     DESTINATION = args.upload  
     TARGET      = args.target  
     PORT        = args.port
-    
+
+    assert 1<= PORT <= 65535,f"Port {PORT} is invalid."
+
+    if not LISTEN:
+        #if we are not listen we are client (send data)
+        print("[*] Client mode - Enter data")
+        buffer = sys.stdin.read()
+        client_mode(buffer)
+
+    else: server_mode()
+
 if __name__ == "__main__":
     main()
