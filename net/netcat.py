@@ -79,6 +79,16 @@ def usage():
     #help print
     pass
 
+def server_mode():
+
+    server_sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    server_sock.bind((TARGET,PORT))
+    server_sock.listen(SERVER_MODE_LISTEN_MAX)
+
+    while True:
+        client_sock,client_addr = server_sock.accept()
+        client_thread = threading.Thread(target=client_handler,args=(client_sock,))
+        client_thread.start()
 
 
 
