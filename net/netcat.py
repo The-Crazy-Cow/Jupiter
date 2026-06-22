@@ -8,9 +8,11 @@ import subprocess
 import argparse
 import ssl
 
-
 #server mode 
 SERVER_MODE_LISTEN_MAX = 5
+
+#client mode
+RECV_BYTES = 4096
 
 #args vars
 LISTEN=False
@@ -90,6 +92,33 @@ def server_mode():
         client_thread = threading.Thread(target=client_handler,args=(client_sock,))
         client_thread.start()
 
+def run_shell(cmd):
+    #delete space and \n ... caract
+    COMMAND = COMMAND.rstrip()
+
+    try:
+        client_shell = subprocess.check_output(
+            COMMAND,
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+    except:
+        client_shell = "failed to execute command.\r\n"
+    return client_shell
+
+def client_handler(client_sock):
+
+    global UPLOAD
+    global EXECUTE
+    global COMMAND
+
+    #check for any upload
+    if len(UPLOAD_DESTINATION):
+
+        file_buffer=""
+
+        if True:
+            data = client_sock.recv()
 
 
 def client_mode(buffer):
@@ -111,11 +140,11 @@ def client_mode(buffer):
             response = ""
 
             while recv_len:
-                data=client_sock.recv(4096)
+                data=client_sock.recv(RECV_BYTES)
                 recv_len=len(data)
                 response+=data
 
-                if recv_len <4096:
+                if recv_len <RECV_BYTES:
                     break
 
             print(f"[*] server response : < {response.decode('utf-8',errors='ignore')} >")
