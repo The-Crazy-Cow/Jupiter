@@ -47,7 +47,20 @@ def server_loop(
 
         pass
 
-    
+def wrap_client_socket(
+    raw_sock: socket.socket,
+    certfile: str,
+    keyfile: str,
+) -> ssl.SSLSocket:
+    """Wrap an accepted socket with server-side TL"""
+
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile=certfile,keyfile=keyfile)
+
+    #usage of min TLS 1.3
+    context.minimum_version = ssl.TLSVersion.TLSv1_3
+    return context.wrap_socket(raw_sock,server_side=True)
+
 
 
 
