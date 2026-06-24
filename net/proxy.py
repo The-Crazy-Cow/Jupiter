@@ -32,7 +32,6 @@ def server_loop(
         print(f"[!!] Failed to bind {local_host}:{local_port} — {exc}")
         sys.exit(1)
 
-    
     print(f"[*] Listening on {local_host}:{local_port}")
     print(f"[*] Forwarding to {remote_host}:{remote_port}")
     print(f"[*] Client-side SSL : {'ON' if ssl_client else 'off'}")
@@ -47,9 +46,20 @@ def server_loop(
 
         if ssl_client:
             try:
-                client_sock = 
+                client_sock = wrap_client_socket(client_raw,certfile=certfile,keyfile=keyfile)
+                print(f"[SSL] Client TLS established — cipher: {client_sock.cipher()}")
+            except ssl.SSLError as exc:
+                print(f"[!] SSL handshake with client failed" : {exc})
+                client_raw.close()
+                continue
+        
+        t = threading.Thread(
+            target=proxy_handler,
+            args=(client_sock, remote_host, remote_port, receive_first, ssl_remote, no_verify),
+            daemon=True,
+        )
+        t.start()
 
-        pass
 
 def wrap_client_socket(
     raw_sock: socket.socket,
