@@ -66,7 +66,7 @@ def wrap_client_socket(
     certfile: str,
     keyfile: str,
 ) -> ssl.SSLSocket:
-    """Wrap an accepted socket with server-side TL"""
+    """Wrap an accepted socket with server-side TLS"""
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile=certfile,keyfile=keyfile)
@@ -75,9 +75,78 @@ def wrap_client_socket(
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     return context.wrap_socket(raw_sock,server_side=True)
 
+def build_parser()-> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=textwrap.dedent("""\
+            TCP proxy with optional SSL/TLS on the client and/or remote side.
+        """),
+        add_help=False
+    )
 
+    parser.add_argument("local_host", 
+                        help="Interface to listen")
 
+    parser.add_argument("local_port", type=int)
 
+    parser.add_argument("remote_host", 
+                        help="Target host to forward traffic to")
+
+    parser.add_argument("remote_port", 
+                        type=int)
+
+    parser.add_argument(
+        "--receive-first", 
+        action="store_true",
+        help="Pull a banner from remote before waiting for client data",
+    )
+    parser.add_argument(
+        "--ssl-client", action="store_true",
+        help="Wrap the client ↔ proxy leg with TLS (requires --cert and --key)",
+    )
+    
+    parser.add_argument(
+        "--ssl-remote", action="store_true",
+        help="Wrap the proxy ↔ remote leg with TLS",
+    )
+
+    parser.add_argument(
+        "--no-verify",
+        action="store_true",
+        help="Skip certificate verification on the remote leg",
+    )
+
+    parser.add_argument(
+        "--cert", 
+        default="proxy.crt",
+        help="Path to PEM certificate for server-side TLS",
+    )
+
+    parser.add_argument(
+        "--key", default="proxy.key",
+        help="Path to PEM private key for server-side TLS (default: proxy.key)",
+    )
+
+    return parser.parse_args()
+
+def main() -> None:
+    args = parse_args()
+
+    if args.ssl_client and not (args.cert and args.key):
+        print("[!!] --ssl-client requires --cert and --key")
+        sys.exit(1)
+
+    server_loop(
+        local_host=args.local_host,
+        local_port=args.local_port,
+        remote_host=args.remote_host,
+        remote_port=args.remote_port,
+        receive_first=args.receive_first,
+        ssl_client=args.ssl_client,
+        ssl_remote=args.ssl_remote,
+        no_verify=args.no_verify,
+        certfile=args.cert,
+        keyfile=args.key,
+    )
 
 
 if __name__ == "__main__":
