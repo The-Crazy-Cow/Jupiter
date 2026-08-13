@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+line-length = 80
+
+[format]
+quote-style = "double"
+indent-style = "space"
