@@ -1,2 +1,2 @@
-# Juppiter
+# Jupiter
 hack-tools
