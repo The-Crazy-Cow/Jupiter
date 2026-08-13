@@ -42,9 +42,12 @@ class HoneyPotCfg(sniffCfg):
 class TcpFlagScanCfg(NetCfg):
     dports: List[int]
     sport : int = 33333 
+    sflags:str
+    rflags:str
+    scan  :str
 
-@dataclass
-class DnsScanConfig(NetCfg):
+@dataclass(kw_only=True)
+class DnsScanCfg(NetCfg):
     qname  : str
     rd     : int = 1  # recursion desired
     dport  : int = 53
