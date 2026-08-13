@@ -2,12 +2,13 @@
 
 import utils.cli as cli
 from utils.cli import CommandBuilder, cliTool
-from utils.config.cliconfig import *
+from utils.config.cliconfig import CommandConfig, OptionConfig
 from utils.config.netconfig import DnsScanCfg, TcpFlag, TcpFlagScanCfg
 from shared import console
 
-from scapy.all import DNS, DNSQR, IP, TCP, UDP, sr
+from scapy.all import IP, TCP, sr
 import click
+from typing import List
 
 BANNER = r""" 
 ████████╗ ███████╗ ██████╗ █████╗  ███╗   ██╗ 
@@ -195,8 +196,11 @@ class TcpFlagScan(cliTool):
         if ans:
             console.print_info(f"Open ports on destination [{cfg.host}]:")
             for s, r in ans:
+                # Guard: ensure response contains TCP layer
+                if TCP not in r or TCP not in s:
+                    continue
                 if s[TCP].dport == r[TCP].sport and r[TCP].flags == cfg.rflags:
-                    cli.print_info(s[TCP].dport)
+                    console.print_info(s[TCP].dport)
                     return 0
         else:
             console.format_red("no answer")
