@@ -4,7 +4,7 @@ import utils.io as io
 import argparse
 from utils.config.netconfig import TcpFlagScanCfg,DnsScanCfg,TcpFlag
 from utils.usage import Usage
-from scapy.all import IP,TCP,sr
+from scapy.all import IP,TCP,sr,UDP,DNS,DNSQR
 
 def parse_tcp_scan_args(argv=None) -> TcpFlagScanCfg:
     usg = Usage(
