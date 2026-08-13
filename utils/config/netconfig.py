@@ -3,8 +3,9 @@
 from utils.config.config import Config
 from dataclasses import dataclass
 from typing import List
-from typing import Callable,Any
+from typing import Callable, Any
 from enum import IntFlag
+
 
 class TcpFlag(IntFlag):
     FIN = 0x01
@@ -16,38 +17,43 @@ class TcpFlag(IntFlag):
     ECE = 0x40
     CWR = 0x80
 
+
 @dataclass(kw_only=True)
 class NetCfg(Config):
-    host   : str = "localhost"
-    dst    : str = "localhost"
+    host: str = "localhost"
+    dst: str = "localhost"
     timeout: int = 2
     verbose: int = 0
 
+
 @dataclass(kw_only=True)
 class sniffCfg(NetCfg):
-    prn    : Callable[[Any], None] 
-    store  : bool = True
-    count  : int = 25
-    filter : str = 'f'
-    iface  : str = 'eth0'
+    prn: Callable[[Any], None]
+    store: bool = True
+    count: int = 25
+    filter: str = "f"
+    iface: str = "eth0"
+
 
 # you will notice that HoneyConfig not inehrit of network basic config class
 # 'netConfig'obivisiouly it's done by inheritence NetConfig --> sniffCfg
 @dataclass(kw_only=True)
 class HoneyPotCfg(sniffCfg):
-    ports   : tuple
-    honeys  : tuple
+    ports: tuple
+    honeys: tuple
+
 
 @dataclass(kw_only=True)
 class TcpFlagScanCfg(NetCfg):
     dports: List[int]
-    sport : int = 33333 
-    sflags:str
-    rflags:str
-    scan  :str
+    sport: int = 33333
+    sflags: str
+    rflags: str
+    scan: str
+
 
 @dataclass(kw_only=True)
 class DnsScanCfg(NetCfg):
-    qname  : str
-    rd     : int = 1  # recursion desired
-    dport  : int = 53
+    qname: str
+    rd: int = 1  # recursion desired
+    dport: int = 53
