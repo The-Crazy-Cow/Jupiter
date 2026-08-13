@@ -153,7 +153,6 @@ def parse_dns_scan_args(argv=None) -> DnsScanCfg:
 
     return DnsScanCfg(**vars(args))
 
-
 class NetScan:
     def __init__(self,tcp_cfg:TcpFlagScanCfg|None=None,dns_cfg:DnsScanCfg|None=None):
         if tcp_cfg is None and dns_cfg is None:
@@ -228,8 +227,11 @@ class NetScan:
             for (s,r) in ans:
                 if s[TCP].dport == r[TCP].sport and r[TCP].flags==cfg.rflags:
                     io.print_info(s[TCP].dport)
+                    return 0
         else: 
             io.print_info("no answer")
+
+        return 1
 
     def __syn_scan(self): 
         self.tcp_cfg.sflags = TcpFlag.SYN
