@@ -24,19 +24,20 @@ Certificate generation (needed for --ssl-client):
         -days 365 -nodes -subj "/CN=localhost"
 """
 
-#tcp proxy
+# tcp proxy
 
 import sys
 import socket
 import ssl
 import threading
-import  argparse
-import  textwrap
+import argparse
+import textwrap
 
-#const
-MAX_PROXY_LISTEN=5
+# const
+MAX_PROXY_LISTEN = 5
 
-def response_handler(buffer:bytes)-> bytes:
+
+def response_handler(buffer: bytes) -> bytes:
     """
     Called for every buffer travelling FROM the remote host TO the local client.
     Modify, log, or drop bytes here.
@@ -47,8 +48,8 @@ def response_handler(buffer:bytes)-> bytes:
 
     return buffer
 
-def receive_from(sock: socket.socket, timeout: float = 2.0) -> bytes:
 
+def receive_from(sock: socket.socket, timeout: float = 2.0) -> bytes:
     """Read all available data from *sock*, returning bytes."""
 
     buf = b""
@@ -67,6 +68,7 @@ def receive_from(sock: socket.socket, timeout: float = 2.0) -> bytes:
         print(f"[!!] receive_from error: {exc}")
     return buf
 
+
 def request_handler(buffer: bytes) -> bytes:
     """
     Called for every buffer travelling FROM the local client TO the remote host.
@@ -78,10 +80,11 @@ def request_handler(buffer: bytes) -> bytes:
             if line.startswith(b"Host:"):
                 print(f"[>>] Host header: {line.decode(errors='replace')}")
     """
-    
+
     return buffer
 
-#hexdump helper
+
+# hexdump helper
 def hexdump(src: bytes, length: int = 16, prefix: str = "") -> None:
     """Print a formatted hex + ASCII dump of *src*."""
     if not src:
@@ -96,12 +99,12 @@ def hexdump(src: bytes, length: int = 16, prefix: str = "") -> None:
 
     print("\n".join(lines))
 
+
 def wrap_remote_socket(
     raw_sock: socket.socket,
     remote_host: str,
     verify: bool = True,
 ) -> ssl.SSLSocket:
-
     """Wrap an outgoing socket with client-side TLS."""
 
     context = ssl.create_default_context()
@@ -112,22 +115,23 @@ def wrap_remote_socket(
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     return context.wrap_socket(raw_sock, server_hostname=remote_host)
 
-#proxy logic core
+
+# proxy logic core
 def proxy_handler(
-                client_sock: socket.socket,
-                remote_host: str,
-                remote_port: int,
-                receive_first: bool,
-                ssl_remote: bool,
-                no_verify: bool,
+    client_sock: socket.socket,
+    remote_host: str,
+    remote_port: int,
+    receive_first: bool,
+    ssl_remote: bool,
+    no_verify: bool,
 ) -> None:
     """handle client connection in its own thread."""
-    #connect to remote
+    # connect to remote
 
-    raw_remote = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    raw_remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        raw_remote.connect((remote_host,remote_port))
+        raw_remote.connect((remote_host, remote_port))
     except Exception as exc:
         print(f"[!] Cannot connect to {remote_host}:{remote_port} - {exc}")
         client_sock.close()
@@ -136,15 +140,19 @@ def proxy_handler(
     remote_sock: socket.socket = raw_remote
     if ssl_remote:
         try:
-            remote_sock = wrap_remote_socket(raw_remote, remote_host, verify=not no_verify)
-            print(f"[SSL] Remote TLS established — cipher: {remote_sock.cipher()}")
+            remote_sock = wrap_remote_socket(
+                raw_remote, remote_host, verify=not no_verify
+            )
+            print(
+                f"[SSL] Remote TLS established — cipher: {remote_sock.cipher()}"
+            )
         except ssl.SSLError as exc:
             print(f"[!!] SSL handshake with remote failed: {exc}")
             raw_remote.close()
             client_sock.close()
             return
 
-    #Optionnaly grab a banner from remote before client speak
+    # Optionnaly grab a banner from remote before client speak
     if receive_first:
         remote_buf = receive_from(remote_sock)
         if remote_buf:
@@ -181,6 +189,7 @@ def proxy_handler(
     client_sock.close()
     remote_sock.close()
 
+
 def server_loop(
     local_host: str,
     local_port: int,
@@ -210,23 +219,34 @@ def server_loop(
     server.listen(MAX_PROXY_LISTEN)
 
     while True:
-        client_raw,addr =  server.accept()
+        client_raw, addr = server.accept()
         print(f"\n[*] Connection from {addr[0]}:{addr[1]}")
 
         client_sock: socket.socket = client_raw
 
         if ssl_client:
             try:
-                client_sock = wrap_client_socket(client_raw,certfile=certfile,keyfile=keyfile)
-                print(f"[SSL] Client TLS established — cipher: {client_sock.cipher()}")
+                client_sock = wrap_client_socket(
+                    client_raw, certfile=certfile, keyfile=keyfile
+                )
+                print(
+                    f"[SSL] Client TLS established — cipher: {client_sock.cipher()}"
+                )
             except ssl.SSLError as exc:
                 print(f"[!] SSL handshake with client failed - {exc}")
                 client_raw.close()
                 continue
-        
+
         t = threading.Thread(
             target=proxy_handler,
-            args=(client_sock, remote_host, remote_port, receive_first, ssl_remote, no_verify),
+            args=(
+                client_sock,
+                remote_host,
+                remote_port,
+                receive_first,
+                ssl_remote,
+                no_verify,
+            ),
             daemon=True,
         )
         t.start()
@@ -240,43 +260,43 @@ def wrap_client_socket(
     """Wrap an accepted socket with server-side TLS"""
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile=certfile,keyfile=keyfile)
+    context.load_cert_chain(certfile=certfile, keyfile=keyfile)
 
-    #usage of min TLS 1.2
+    # usage of min TLS 1.2
     context.minimum_version = ssl.TLSVersion.TLSv1_2
-    return context.wrap_socket(raw_sock,server_side=True)
+    return context.wrap_socket(raw_sock, server_side=True)
 
-def build_parser()-> argparse.Namespace:
+
+def build_parser() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=textwrap.dedent("""\
             TCP proxy with optional SSL/TLS on the client and/or remote side.
         """),
-        add_help=False
+        add_help=False,
     )
 
-    parser.add_argument("local_host", 
-                        help="Interface to listen")
+    parser.add_argument("local_host", help="Interface to listen")
 
     parser.add_argument("local_port", type=int)
 
-    parser.add_argument("remote_host", 
-                        help="Target host to forward traffic to")
+    parser.add_argument("remote_host", help="Target host to forward traffic to")
 
-    parser.add_argument("remote_port", 
-                        type=int)
+    parser.add_argument("remote_port", type=int)
 
     parser.add_argument(
-        "--receive-first", 
+        "--receive-first",
         action="store_true",
         help="Pull a banner from remote before waiting for client data",
     )
     parser.add_argument(
-        "--ssl-client", action="store_true",
+        "--ssl-client",
+        action="store_true",
         help="Wrap the client ↔ proxy leg with TLS (requires --cert and --key)",
     )
-    
+
     parser.add_argument(
-        "--ssl-remote", action="store_true",
+        "--ssl-remote",
+        action="store_true",
         help="Wrap the proxy ↔ remote leg with TLS",
     )
 
@@ -287,17 +307,19 @@ def build_parser()-> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--cert", 
+        "--cert",
         default="proxy.crt",
         help="Path to PEM certificate for server-side TLS",
     )
 
     parser.add_argument(
-        "--key", default="proxy.key",
+        "--key",
+        default="proxy.key",
         help="Path to PEM private key for server-side TLS (default: proxy.key)",
     )
 
     return parser.parse_args()
+
 
 def main() -> None:
     args = build_parser()
