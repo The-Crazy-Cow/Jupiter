@@ -5,14 +5,14 @@ from typing import List
 
 @dataclass
 class OptionConfig:
-    """command CConfiguration argument options"""
+    """command Configuration argument options"""
     name: str         
     is_flag: bool = True
     help_text: str = ""
+    options: List[str] = field(default_factory=list)
 
 @dataclass
 class CommandConfig:
     name: str                                     
     help_text: str                               
     choices: List[str]                           
-    options: List[OptionConfig] = field(default_factory=list)
