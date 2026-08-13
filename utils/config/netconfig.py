@@ -4,8 +4,19 @@ from utils.config.config import Config
 from dataclasses import dataclass
 from typing import List
 from typing import Callable,Any
+from enum import IntFlag
 
-@dataclass 
+class TcpFlag(IntFlag):
+    FIN = 0x01
+    SYN = 0x02
+    RST = 0x04
+    PSH = 0x08
+    ACK = 0x10
+    URG = 0x20
+    ECE = 0x40
+    CWR = 0x80
+
+@dataclass(kw_only=True)
 class NetCfg(Config):
     host   : str = "localhost"
     dst    : str = "localhost"
