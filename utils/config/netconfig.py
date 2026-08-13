@@ -21,9 +21,9 @@ class NetCfg(Config):
     host   : str = "localhost"
     dst    : str = "localhost"
     timeout: int = 2
-    verbose: int = 0 
+    verbose: int = 0
 
-@dataclass
+@dataclass(kw_only=True)
 class sniffCfg(NetCfg):
     count  : int = 25
     filter : str = 'f'
