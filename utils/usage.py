@@ -3,15 +3,14 @@
 import argparse
 import sys
 
-class Usage:
 
+class Usage:
     def __init__(self, description: str, add_help=True) -> None:
         if not description:
             raise ValueError("empty 'description'")
 
         self.__parser = argparse.ArgumentParser(
-            description=description,
-            add_help=add_help
+            description=description, add_help=add_help
         )
 
     @property
