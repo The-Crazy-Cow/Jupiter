@@ -25,21 +25,21 @@ class NetCfg(Config):
 
 @dataclass(kw_only=True)
 class sniffCfg(NetCfg):
+    prn    : Callable[[Any], None] 
+    store  : bool = True
     count  : int = 25
     filter : str = 'f'
     iface  : str = 'eth0'
-    prn    : Callable[[Any], None] 
-    store  : bool = True
 
 # you will notice that HoneyConfig not inehrit of network basic config class
 # 'netConfig'obivisiouly it's done by inheritence NetConfig --> sniffCfg
-@dataclass
+@dataclass(kw_only=True)
 class HoneyPotCfg(sniffCfg):
     ports   : tuple
     honeys  : tuple
 
-@dataclass
-class TcpFlagScanConfig(NetCfg):
+@dataclass(kw_only=True)
+class TcpFlagScanCfg(NetCfg):
     dports: List[int]
     sport : int = 33333 
 
