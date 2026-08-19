@@ -1,9 +1,24 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+"""
+@file tcpFlagScan.py
+@brief TCP flag-based port scanning tool for Jupiter framework.
+@author Security Team
+@version 1.0
+@date 2026-08-19
+
+@details
+Implements advanced TCP port scanning using various flag combinations
+(SYN, ACK, FIN, RST, etc.) to detect firewalls and network behavior.
+Uses Scapy for raw packet crafting and sending.
+
+@see TcpFlagScan, TcpFlagScanCfg, TcpFlag
+"""
+
 import utils.cli as cli
 from utils.cli import CommandBuilder, cliTool
 from utils.config.cliconfig import CommandConfig, OptionConfig
-from utils.config.netconfig import DnsScanCfg, TcpFlag, TcpFlagScanCfg
+from utils.config.netconfig import TcpFlag, TcpFlagScanCfg
 from shared import console
 
 from scapy.all import IP, TCP, sr
@@ -27,15 +42,34 @@ HELP = r"""
 
 
 class TcpFlagScan(cliTool):
+    """
+    @class TcpFlagScan
+    @brief TCP flag-based port scanner.
+    @details Performs port scanning using custom TCP flag combinations
+    to detect open ports and firewall behavior.
+    """
     def __init__(self, tcp_cfg: TcpFlagScanCfg):
+        """
+        @brief Initialize the TCP Flag Scanner.
+        @param tcp_cfg TcpFlagScanCfg configuration object
+        """
         self.tcp_cfg = tcp_cfg
 
     @property
     def tcp_cfg(self):
+        """
+        @brief Get the TCP configuration.
+        @return TcpFlagScanCfg object
+        """
         return self._tcp_cfg
 
     @tcp_cfg.setter
     def tcp_cfg(self, tcp_cfg: TcpFlagScanCfg):
+        """
+        @brief Set and validate the TCP configuration.
+        @param tcp_cfg TcpFlagScanCfg configuration object
+        @throw TypeError if tcp_cfg is not TcpFlagScanCfg instance
+        """
         if tcp_cfg is not None and not isinstance(tcp_cfg, TcpFlagScanCfg):
             raise TypeError(
                 f"'tcp_cfg' must be an <'TcpFlagScanCfg'>, got {type(tcp_cfg)}"
@@ -45,6 +79,10 @@ class TcpFlagScan(cliTool):
 
     @staticmethod
     def print_banner():
+        """
+        @brief Display the TcpFlagScan banner.
+        @details Prints the tool's ASCII art banner to console.
+        """
         return console.print_banner(BANNER)
 
     @classmethod
