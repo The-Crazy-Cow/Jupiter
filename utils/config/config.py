@@ -6,6 +6,12 @@ from dataclasses import dataclass
 # all Configuration class inherit of 'Config'
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Config:
     usage: Usage
+
+
+@dataclass(kw_only=True)
+class LoginCfg(Config):
+    username: str
+    password: str
