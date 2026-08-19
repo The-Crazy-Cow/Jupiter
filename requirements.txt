@@ -13,6 +13,7 @@ h11==0.16.0
 idna==3.11
 multidict==6.7.1
 packaging==25.0
+paramiko==3.4.0
 platformdirs==4.9.6
 propcache==0.4.1
 python-discovery==1.2.2
