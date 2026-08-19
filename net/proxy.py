@@ -1,27 +1,32 @@
 #!/usr/bin/env python3
 
 """
-ssl_proxy.py — TCP proxy with optional SSL/TLS on client and/or remote side.
+@file proxy.py
+@brief TCP proxy with optional SSL/TLS support for Jupiter framework.
+@author Security Team
+@version 1.0
+@date 2026-08-19
 
-Usage:
-    python ssl_proxy.py [options] <localhost> <localport> <remotehost> <remoteport>
+@details
+Implements a bidirectional TCP proxy capable of handling plain TCP, SSL/TLS,
+or mixed connections. Useful for intercepting and analyzing network traffic.
 
-Examples:
-    # Plain proxy (no SSL anywhere):
-    python ssl_proxy.py 127.0.0.1 9000 10.0.0.1 9000
+Features:
+  - Transparent TCP proxying
+  - SSL/TLS wrapping on client and/or remote sides
+  - Configurable receive-first behavior
+  - Request/response handler callbacks
+  - Hex dump utilities for traffic inspection
 
-    # Wrap both sides in SSL (MITM between two TLS peers):
-    python ssl_proxy.py --ssl-client --ssl-remote 127.0.0.1 9443 10.0.0.1 443
+@note Requires certificate files for SSL/TLS modes.
 
-    # Only encrypt the upstream leg (client → proxy is plain, proxy → server is SSL):
-    python ssl_proxy.py --ssl-remote 127.0.0.1 9000 api.example.com 443
-
-    # Receive remote banner before waiting for client (e.g. FTP, SSH):
-    python ssl_proxy.py --receive-first --ssl-remote 127.0.0.1 9021 ftp.example.com 21
-
-Certificate generation (needed for --ssl-client):
-    openssl req -x509 -newkey rsa:4096 -keyout proxy.key -out proxy.crt \
-        -days 365 -nodes -subj "/CN=localhost"
+@code
+    # Create plain TCP proxy
+    ssl_proxy.py 127.0.0.1 9000 192.168.1.100 8000
+    
+    # Create SSL-wrapped proxy
+    ssl_proxy.py --ssl-client --ssl-remote 127.0.0.1 9443 api.example.com 443
+@endcode
 """
 
 # tcp proxy
@@ -39,18 +44,32 @@ MAX_PROXY_LISTEN = 5
 
 def response_handler(buffer: bytes) -> bytes:
     """
-    Called for every buffer travelling FROM the remote host TO the local client.
+    @brief Handle data from remote server to client.
+    @param buffer Data received from remote server
+    @return Modified data to send to client
+    @details Called for every buffer traveling FROM the remote host TO the local client.
     Modify, log, or drop bytes here.
-
-    eg: redact a string in server responses
-    buffer = buffer.replace(b"secret", b"REDACTED")
+    
+    @code
+    def response_handler(buffer):
+        # Redact sensitive data in server responses
+        buffer = buffer.replace(b"secret", b"REDACTED")
+        return buffer
+    @endcode
     """
 
     return buffer
 
 
 def receive_from(sock: socket.socket, timeout: float = 2.0) -> bytes:
-    """Read all available data from *sock*, returning bytes."""
+    """
+    @brief Read all available data from socket.
+    @param sock Socket to read from
+    @param timeout Read timeout in seconds (default: 2.0)
+    @return Bytes read from socket
+    @details Reads all available data from socket with timeout handling.
+    Handles SSL and timeout exceptions gracefully.
+    """
 
     buf = b""
     sock.settimeout(timeout)
@@ -71,14 +90,20 @@ def receive_from(sock: socket.socket, timeout: float = 2.0) -> bytes:
 
 def request_handler(buffer: bytes) -> bytes:
     """
-    Called for every buffer travelling FROM the local client TO the remote host.
+    @brief Handle data from client to remote server.
+    @param buffer Data received from client
+    @return Modified data to send to server
+    @details Called for every buffer traveling FROM the local client TO the remote host.
     Modify, log, or drop bytes here.
-
-    Example: log HTTP Host header
-    if b"Host:" in buffer:
-        for line in buffer.split(b"\r\n"):
-            if line.startswith(b"Host:"):
-                print(f"[>>] Host header: {line.decode(errors='replace')}")
+    
+    @code
+    def request_handler(buffer):
+        if b"Host:" in buffer:
+            for line in buffer.split(b"\\r\\n"):
+                if line.startswith(b"Host:"):
+                    print(f"[>>] Host header: {line.decode()}")
+        return buffer
+    @endcode
     """
 
     return buffer
@@ -86,7 +111,14 @@ def request_handler(buffer: bytes) -> bytes:
 
 # hexdump helper
 def hexdump(src: bytes, length: int = 16, prefix: str = "") -> None:
-    """Print a formatted hex + ASCII dump of *src*."""
+    """
+    @brief Print formatted hex + ASCII dump of data.
+    @param src Data to dump
+    @param length Bytes per line (default: 16)
+    @param prefix Prefix string for each line
+    @details Prints a formatted hexadecimal and ASCII representation of binary data,
+    useful for traffic inspection and debugging.
+    """
     if not src:
         return
 
