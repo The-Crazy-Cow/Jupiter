@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-# class Console implements like singleton patterns for the use
-# of one entity Console() wich are responsible of output in the cli
-
 import click, shlex
 from typing import Callable
 from utils.config.cliconfig import *
@@ -26,12 +23,22 @@ HELP = """
 
 class Console:
     """Manages the CLI IO operations, formatting, and command registration."""
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(
         self,
         title: str = TOOL_NAME,
         synopsis: str = HELP,
     ):
+        if Console._initialized:
+            return
+        
         @click.group(
             name=title,
             help=f"{title}  -{synopsis}.",
@@ -45,6 +52,7 @@ class Console:
                 click.secho(ctx.get_help(), bold=True)
 
         self._cli = cli
+        Console._initialized = True
 
     def print_banner(self, banner):
         click.echo(click.style(banner, fg="green", bold=True))
